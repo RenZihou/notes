@@ -115,11 +115,11 @@ class NewClass(object):
 class MyClass(object):
 	def method_a(self):  # 实例方法
 		pass
-	
+
 	@classmethod
 	def method_b():  # 类方法
 		pass
-		
+
 	@staticmethod
 	def method_c():  # 静态方法
 		pass
@@ -208,7 +208,7 @@ class MyClass(object):
 	注意：实际进行比较时，会先查找对应方法，其次会查找共轭方法（大于小于之间可以通过调换参数的方式调用，等于/不等于之间可以替换）；不支持叠加操作
 	
 	```python
-class MyClass(object):
+	class MyClass(object):
 		def __eq__(self, other):  # ==
 			return self.x == other.x
 
@@ -257,11 +257,11 @@ class MyClass(object):
 	class MyClass(Object):
 		def __init__(self, *args, **kwargs):
 			self.count = 0
-		
+	
 		def __iter__(self):  # 先被调用，获取一个迭代器对象
 			self.count = 0  # 重置以实现复用，没有此行则一次性
 			return self
-		
+	
 		def __next__(self):  # 针对迭代器获取下一个值
 			self.count += 1
 			if self.count >= maxn:  # 判定循环上限
@@ -309,15 +309,15 @@ class MyClass(object):
 	class MyClass(Object):
 		def __init__(self):
 			self.__a = 1
-			
+	
 		@property
 		def a(self):
 			return self.__a
-			
+	
 		@a.setter  # 属性名.setter
 		def a(self, value):
 			self.__a = value
-			
+	
 		@a.deleter  # 属性名.deleter
 		def a(self):
 			del self.__a
@@ -329,13 +329,13 @@ class MyClass(object):
 	class A(Object):
 		def __get__(self, instance, owner):
 			return instance.__a  # `self`为共用的类，`instance`才是不同实例
-			
+	
 		def __set__(self, instance, value):
 			instance.__a = value
-			
+	
 		def __delete__(self, instance):
 			del instance.__a
-		
+	
 	class MyClass(Object):
 		a = A()
 	```
@@ -574,20 +574,20 @@ newfunc()  # 实际调用
 	class BaseClass(object):
 		def func(self):
 			pass
-			
+	
 	class SubClass1(BaseClass):
 		def func(self):
 			# code1
 			pass
-			
+	
 	class SubClass2(BaseClass):
 		def func(self):
 			# code2
 			pass
-			
+	
 	def test(obj):
 		obj.func()
-			
+	
 	a = SubClass1()
 	b = SubClass2()
 	test(a)
