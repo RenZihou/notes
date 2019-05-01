@@ -2,6 +2,10 @@
 
 ***
 
+[TOC]
+
+***
+
 ## 基础知识
 
 * 类：具有对象特征的抽象，包括名称、属性和方法
@@ -78,9 +82,16 @@ class NewClass(object):
 
 	优化：装饰器`@property`使得可以以属性的方法调用方法
 
-* 内置属性：类属性：`__dict__`：类属性，字典；`__bases__`：父类，元组；`__doc__`：注释，字符串；`__name__`：类名；`__module__`：定义模块
-
-	实例属性：`__dict__`：实例属性，字典；`__class__`：对应类
+* 内置属性：
+	* 类属性：
+		`__dict__`：类属性，`dict`
+		`__bases__`：父类，`tuple`
+		`__doc__`：注释，`str`
+		`__name__`：类名
+		`__module__`：定义模块
+	* 实例属性：
+		`__dict__`：实例属性，`dict`
+		`__class__`：对应类
 
 ***
 
@@ -102,15 +113,15 @@ class NewClass(object):
 
 ```python
 class MyClass(object):
-	def method_a(self): #实例方法
+	def method_a(self):  # 实例方法
 		pass
 	
-	@classmethod #装饰器
-	def method_b(cls): #类方法
+	@classmethod
+	def method_b():  # 类方法
 		pass
-	
-	@staticmethod #装饰器
-	def method_c(): #静态方法
+		
+	@staticmethod
+	def method_c():  # 静态方法
 		pass
 ```
 
@@ -173,7 +184,6 @@ class MyClass(object):
 	
 	* 查找：`__getitem__(self, item)`
 	
-	
 * 删除：`__delitem__(self, key)`，此后可以通过`del 对象名[属性名]`进行删除
 	
 	```python
@@ -221,7 +231,9 @@ class MyClass(object):
 * （内置）上下文布尔值：`__bool__(self)`，返回值被转换为布尔值
 
 * （内置）遍历操作：
-		方式一：
+
+	方式一：
+
 	```python
 	class MyClass(Object):
 		def __init__(self, *args, **kwargs):
@@ -238,7 +250,9 @@ class MyClass(object):
 	for i in MyObject:
 		print(i)
 	```
+
 	方式二：迭代器（优先级更高）
+
 	```python
 	class MyClass(Object):
 		def __init__(self, *args, **kwargs):
