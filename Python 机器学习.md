@@ -554,9 +554,9 @@ import seaborn as sns
 	
 * 交叉验证：
 	
-	1. 将数据划分为较多的训练集和较少的测试集；
-	2. 将训练集三等分（具体值可调），用1和2共同建立模型，得到一些参数，再用3（验证集）去验证；
-	3. 三者轮换，共三次训练+验证。目的是让验证更加可靠
+	1. 将数据划分为较多的训练集和较少的测试集
+	2. 将训练集三等分（具体值可调），用1和2共同建立模型，得到一些参数，再用3（验证集）去验证
+	3. 三者轮换，共三次训练+验证
 	
 	```python
 	from sklearn.cross_validation import train_test_split  # 划分训练集和测试集
@@ -584,10 +584,10 @@ import seaborn as sns
 
 	```python
 	from sklearn.linear_model import LogisticRegression
-	from sklearn.cross_validation import KFold  # 划分训练集
+	from sklearn.model_selection import KFold  # 划分训练集
 
 	def printing_kfold_scores(x_train_data, y_train_data):
-		fold = KFold(len(y_train_data), 5, shuffle=False)  # 将原始训练集切分为5个，shuffle=False不重新排列
+		fold = KFold(5, shuffle=False)  # 将原始训练集切分为5个，shuffle=False不重新排列
 		c_param_range = (0.01, 0.1, 1, 10, 100)  # 正则化惩罚项
 
 		# 可视化
@@ -596,7 +596,7 @@ import seaborn as sns
 
 		j = 0
 		for c_param in c_param_range:  # 在循环中使用不同的c值
-		print('-' * 20 + '\nc_parameter: %f\n' % c_param + '-' * 20)  # 显示每一次的c值
+			print('-' * 20 + '\nc_parameter: %f\n' % c_param + '-' * 20)  # 显示每一次的c值
 	
 			recall_accs = []
 			for iteration, indices in enumerate(fold, start=1):
@@ -729,4 +729,269 @@ import seaborn as sns
 ***
 
 ## 决策树算法
+
+### 理论内容
+
+* 决策树：将所有数据从根节点（第一个选择点）开始一步步进行决策分支，最终到达叶子节点（最终的决策结果）
+
+* 可以用来进行分类或回归
+
+* 每个节点相当于在数据中进行了一次划分，得到一个左子树和一个右子树
+
+* 训练决策树：从给定的训练集中构造出一棵树（从根节点开始选择特征，以及如何根据特征进行切分），是任务的难点所在
+
+* 测试决策树：根据构造的树模型走一遍即可
+
+* 如何切分特征（选择节点）：通过一种衡量标准，来计算通过不同特征进行分支选择后的分类情况，找出最好的当成根节点，以此类推
+
+* 衡量标准：熵，表示随机变量不确定性
+	$$
+	H(x) = - \sum_{i=1}^n P_i\log P_i
+	$$
+	熵值越高，不确定性越高，即可能的结果越多（即$P\to0.5$）。因此，在分类任务中我们希望熵值极小（即$P\to0$或$P\to1$）
+
+* 信息增益：表示特征$X$使得类$Y$的不确定性减少的程度
+
+	计算：
+
+	1. 未划分时的熵值：
+		$$
+		H_0(x) = -P(x=0)\log P(x=0) - P(x=1)\log P(x=1)
+		$$
+
+	2. 根据某一特征$X$划分，原数据被划分为$m$组，相应的$X$的取值概率分别为$(p_1, p_2, ..., p_m)$
+
+	3. 在上述$m$组中，每一组中$P(x=1) = P_i(x=1)$，则每一组的熵值为：
+		$$
+		H_i(x) = -P_i(x=0)\log P_i(x=0) - P_i(x=1)\log P_i(x=1)
+		$$
+
+	4. 在$X$的划分下，熵值变为：
+		$$
+		H'(x) = \sum_{i=1}^m p_iH_i(x)
+		$$
+
+	5. 因此信息增益为
+		$$
+		-\Delta H(x) = H_0(x) - H'(x)
+		$$
+
+* `ID3`算法：使用信息增益作为衡量标准
+
+	通过遍历，计算每一个划分的信息增益，选取最大的作为根节点，以此类推
+
+	问题：遇到极为稀疏、每组中数据个数极少的特征（此类特征末态熵极小，因而信息增益极大），会将其作为根节点，但这中特征在分类中几乎没有意义（极端例子：`ID值`）
+
+* `C4.5`算法：使用信息增益率作为衡量标准
+
+* `GINI`系数：
+	$$
+	Gini(p) = \sum_{k=1}^K p_k(1-p_k) = 1 - \sum_{k=1}^K p_k^2
+	$$
+
+* `CART`算法：使用`GINI`系数差值作为衡量标准
+
+* 遇到连续值：通过贪婪算法确定分界点
+
+* 决策树剪枝策略：避免过拟合（极端例子：每个叶子节点只有一个数据，无限纯净）
+
+	* 预剪枝：边建立决策树边进行剪枝（简化模型，更实用）
+
+		限制 深度，叶子节点个数，叶子节点样本数，信息增益量 等
+
+	* 后剪枝：建立完决策树以后进行剪枝
+
+		通过一定衡量标准：
+
+		损失 $C(T)$：
+		$$
+		C(T) = \sum samples \times H(x) \\ or \\ C(T) = \sum samples \times Gini(p)
+		$$
+		再限制叶子节点个数 $T_{leaf}$：
+		$$
+		C_\alpha(T) = C(T) + \alpha |T_{leaf}|
+		$$
+		对每一次划分，计算划分前后的 $C_\alpha$ 值，若划分后变小，则允许进行划分，否则删除这一划分
+
+### 实际操作
+
+* 涉及参数
+
+	```python
+	from sklearn import tree
+	dtr = tree.DecisionTreeRegressor(max_depth=2)  # 建立树的模型，最大深度为2
+	dtr.fit(data.iloc[:, [0, 1]], data.iloc[:, -1].values.ravel())  # 使用data中的前两列作为划分特征，最后一列为分类结果
+	```
+
+	在实例化模型时，常用的参数：
+
+	* `max_depth`：最大深度，即只选用最好的几个特征来建立模型（预剪枝）。可以通过循环、交叉验证来获取最合适的深度
+	* `min_sample_split`：分裂时所允许的叶子节点中最小的样本数。总样本数较小时无需设定，但若 $>10^5$，可以尝试 $5$
+
+* 可视化显示
+
+	需要先[安装](http://www.graphviz.org/Download..php)工具`graphviz`
+
+	```python
+	import pydotplus
+	from IPython.display import Image
+	
+	dot_data = tree.export_graphviz(
+		dtr, out_file=None, feature_names=data.columns[0:2], filled=True, impurity=False, rounded=True
+		)  # 第一个参数为决策树实例，feature_names需要选择特征对应的列名（此处传入前两列列名）
+	
+	graph = pydotplus.graph_from_dot_data(dot_data)
+	graph.get_nodes()[7].set_fillcolor('#66CCFF')  # 7指所绘的节点个数
+	Image(graph.create_png())
+	graph.write_png('dtr.png')  # 保存png图片
+	```
+
+* 自动选取参数：
+
+	```python
+	from sklearn.grid_search import GridSearchCV
+	from sklearn.ensemble import RandomForestRegressor  # 随机森林
+	from sklearn.model_selection import train_test_split  # 交叉验证
+	
+	data_train, data_test, target_train, target_test = train_test_split(data.iloc[:, :-1], data.iloc[:, -1], test_size=0.1, random_state=0)
+	
+	tree_param_grid = {'min_samples_split': (3, 6, 9), 'n_estimators': (10, 50, 100)}  # RandomForestRegressor 中需要尝试的参数
+	grid = GridSearchCV(RandomForestRegressor(), param_grid=tree_param_grid, cv=5)  # 第一个参数为算法，第二个为参数候选项（字典形式），第三个为交叉验证次数
+	grid.fit(data_train, target_train)
+	print(grid.best_params_)  # 打印最佳参数值
+	```
+
+***
+
+## 集成算法与随机森林
+
+* 三种集成算法：
+
+	* _Bagging_：并行地训练多个分类器，取平均：
+
+		$$
+		f(x) = \frac{\sum_{m=1}^M f_M(x)}{M}
+		$$
+
+		代表：随机森林
+
+	* _Boosting_：串行训练，从弱分类器开始，依次构造树，后一棵树负责弥补前面所有树的残差，从而达到不断加强分类器的目的
+
+		$$
+		F_m(x) = F_{m-1}(x) + argmin_h \sum_{i=1}^m L(y_i, F_{m-1}(x_i)+h(x_i))
+		$$
+	
+		代表：_AdaBoost_，_XgBoost_
+	
+	* _Stacking_：堆叠，聚合多个分类或回归模型
+	
+		第一阶段训练多个分类器（不同算法），得到一系列分类结果；第二阶段将之前得到的分类结果作为特征输入到一个新的分类器中，得到最终结果
+
+### 随机森林
+
+* 随机森林：每个决策树数据采样和特征选择都是随机的，最后将很多个决策树并行放在一起，进行最终的决策
+
+* 实现随机：每棵树随机采样（通常选择原始数据的$60\%$至$80\%$），再从全部特征中随机选取若干个。但要保证每棵树采样数相等、特征数相等
+
+* 随机森林的优势：便于观测哪些特征比较重要，方法如下：
+
+	例如，要观测A特征的重要性，就在拥有全部特征的情况下获得结果的误差值$err_1$，再将A特征完全破坏掉（用随机噪音替换），获得结果的误差值$err_2$，若$err_1 \approx err_2$，则说明A特征不重要；反之若$err_1 \ll err_2$，则说明A特征很重要
+
+* 理论上树的数量越多，泛化能力越强，但实际上树的个数较多时，会趋于一个稳定值
+
+### AdaBoost
+
+* 流程：先对所有数据赋以相同的权重，然后进行分类。如果某一数据在分类中分错了，就再下一次赋以更大的权重。如此构造多个分类器，每个分类器具有不同的精度；于是根据每个分类器的准确性来确定各自的权重，得到最后的结果
+
+***
+
+## 案例实战——泰坦尼克号获救预测
+
+### 数据预处理
+
+* 观察数据：
+
+	```python
+	import seaborn as sns
+	
+	titanic = sns.load_dataset('titanic.csv')
+	print(titanic.describe(include='all'))
+	```
+
+	得到的结果如下：
+
+	||survived|pclass|sex|age|sibsp|parch|fare|embarked|class|who|adult_male|deck|embark_town|alive|alone|
+|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|:----:|
+|count|891.000000|891.000000|891|714.000000|891.000000|891.000000|891.000000|889|891|891|891|203|889|891|891|
+|unique|NaN|NaN|2|NaN|NaN|NaN|NaN|3|3|3|2|7|3|2|2|
+|top|NaN|NaN|male|NaN|NaN|NaN|NaN|S|Third|man|True|C|Southampton|no|True|
+|freq|NaN|NaN|577|NaN|NaN|NaN|NaN|644|491|537|537|59|644|549|537|
+|mean|0.383838|2.308642|NaN|29.699118|0.523008|0.381594|32.204208|NaN|NaN|NaN|NaN|NaN|NaN|NaN|NaN|
+|std|0.486592|0.836071|NaN|14.526497|1.102743|0.806057|49.693429|NaN|NaN|NaN|NaN|NaN|NaN|NaN|NaN|
+|min|0.000000|1.000000|NaN|0.420000|0.000000|0.000000|0.000000|NaN|NaN|NaN|NaN|NaN|NaN|NaN|NaN|
+|25%|0.000000|2.000000|NaN|20.125000|0.000000|0.000000|7.910400|NaN|NaN|NaN|NaN|NaN|NaN|NaN|NaN|
+|50%|0.000000|3.000000|NaN|28.000000|0.000000|0.000000|14.454200|NaN|NaN|NaN|NaN|NaN|NaN|NaN|NaN|
+|75%|1.000000|3.000000|NaN|38.000000|1.000000|0.000000|31.000000|NaN|NaN|NaN|NaN|NaN|NaN|NaN|NaN|
+|max|1.000000|3.000000|NaN|80.000000|8.000000|6.000000|512.329200|NaN|NaN|NaN|NaN|NaN|NaN|NaN|NaN|
+
+* 分析：
+
+	* 共计891个样本，其中`age`有一定缺失，但是年龄对于是否获救有较大影响，不应舍弃，故进行缺失值处理，用均值填充。
+
+		```python
+		titanic['age'] = titanic['age'].fillna(titanic['age'].median())
+		```
+
+	* `sex`在数据集中用`male`和`female`表述，不便于后期处理，故改为0和1
+
+		```python
+		titanic.loc[titanic['sex'] == 'male', 'sex'] = 0
+		titanic.loc[titanic['sex'] == 'female', 'sex'] = 1
+		```
+
+	* 同样的，可以对上船地点`embarked`进行数值映射，但上船地点不像性别那样，显而易见只有两种而可能，所以需要先查看其所有取值可能：
+
+		```python
+		print(titanic['embarked'].unique())
+		```
+
+		然后进行数值映射：
+
+		```python
+		titanic['embarked'] = titanic['embarked'].fillna('S')  # 由于只有两个缺失值，故使用最多的`S`填充
+		titanic.loc[titanic['embarked'] == 'S', 'embarked'] = 0
+		titanic.loc[titanic['embarked'] == 'C', 'embarked'] = 1
+		titanic.loc[titanic['embarked'] == 'Q', 'embarked'] = 2
+		```
+
+* 在下面的操作中，将`survived`作为分类标签，`pclass`、`sex`、`age`、`sibsp`、`parch`、`fare`、`embarked`为分类特征。（其余参数不是与这些特征重复，如`class`、`who`等，就是缺失值太多，如`deck`，故不作为特征）
+
+### 线性回归预测
+
+```python
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import KFold
+
+predictors = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']
+predictions = list()
+
+alg = LinearRegression()
+kf = KFold(4, random_state=False)  # 切分成4份
+
+for train, test in kf.split(titanic):
+	train_predictors = (titanic[predictors].iloc[train, :])  # 训练数据
+	train_target = titanic['survived'].iloc[train]  # 训练集标签
+	alg.fit(train_predictors, train_target)  # 代入线性回归模型
+	test_predictions = alg.predict(titanic[predictors].iloc[test, :])  # 预测测试集
+	predictions.append(test_predictions)  # 记录测试结果
+
+predictions = np.concatenate(predictions, axis=0)  # 
+predictions[predictions > 0.5] = 1  # 将预测值映射为0或1的结果
+predictions[predictions <= 0.5] = 0
+
+accuracy = predictions[predictions == titanic['survived']].shape[0] / len(predictions)  # 预测精度
+print(accuracy)
+```
+
+### 逻辑回归预测
 
