@@ -6,7 +6,19 @@
 
 ***
 
-## Numpy库的使用：
+## 概述
+
+* 有监督学习：
+	* 分类问题——将样本归类到已知的若干个类别中
+	* 回归问题——根据样本特征预测结果
+* 无监督学习：
+	* 聚类问题——挖掘数据的关联模式
+	* 强化问题——研究如何基于环境而行动，寻求最优解策略
+* 强化学习
+
+***
+
+## Numpy库的使用
 
 ```python
 import numpy as np
@@ -92,7 +104,7 @@ import numpy as np
 
 ***
 
-## Pandas库的使用：
+## Pandas库的使用
 ```python
 import pandas as pd
 ```
@@ -157,7 +169,7 @@ import pandas as pd
 
 	添加多个标签时使用列表或元组表示，常见的统计函数有：`mean`，`sum`，`max`，`min`，`count`
 
-* 自定义函数：`df.apply(user_func)` 
+* 自定义函数：`df.apply(user_func)` ，通常会传入匿名函数
 
 	例：返回每一列非空值的个数
 
@@ -167,9 +179,7 @@ import pandas as pd
 
 * `DataFrame`内部结构是`Series`，而`Series`内部结构是`ndarray`
 
-***
-
-## Matplotlib库的使用：
+## Matplotlib库的使用
 ```python
 import matplotlib.pyplot as plt
 ```
@@ -223,7 +233,7 @@ import matplotlib.pyplot as plt
 
 ***
 
-## Seaborn库的使用：
+## Seaborn库的使用
 ```python
 import seaborn as sns
 ```
@@ -277,6 +287,8 @@ import seaborn as sns
 ***
 
 ## 线性回归算法
+
+* 目标：建立从$X$到$y$的映射，解决回归问题
 
 * 拟合：
 	$$
@@ -332,7 +344,11 @@ import seaborn as sns
 
 ***
 
-## 逻辑回归：二分类算法
+## 逻辑回归算法
+
+* 目标：在空间中找到一个分类边界，解决二分类问题
+
+	本质上是在线性回归的基础上加了一层非线性的`Sigmoid`映射
 
 ### 数学推导
 
@@ -549,7 +565,8 @@ import seaborn as sns
 * 对于不同的特征，机器学习会误认为特征值大的相对重要。因而，当特征的重要程度相当时，需要进行标准化处理
 	```python
 	from sklearn.preprocessing import StandardScaler
-	data['norm_x1'] = StandardScaler().fit_transform(data['x1'].reshape(-1, 1))  # 对x1进行标准化预处理，其中reshape()中的-1表示自动识别得到目标矩阵行数，1表示目标矩阵列数
+	columns = ['x_1', 'x_2']  # 要进行处理的列标签
+	data[columns] = StandardScaler().fit_transform(data[columns])
 	```
 	
 * 交叉验证：
@@ -938,31 +955,38 @@ import seaborn as sns
 
 	* 共计891个样本，其中`age`有一定缺失，但是年龄对于是否获救有较大影响，不应舍弃，故进行缺失值处理，用均值填充。
 
-		```python
-		titanic['age'] = titanic['age'].fillna(titanic['age'].median())
-		```
+	```python
+	titanic['age'] = titanic['age'].fillna(titanic['age'].median())
+	```
 
 	* `sex`在数据集中用`male`和`female`表述，不便于后期处理，故改为0和1
 
-		```python
-		titanic.loc[titanic['sex'] == 'male', 'sex'] = 0
-		titanic.loc[titanic['sex'] == 'female', 'sex'] = 1
-		```
+	```python
+	titanic.loc[titanic['sex'] == 'male', 'sex'] = 0
+	titanic.loc[titanic['sex'] == 'female', 'sex'] = 1
+	```
 
 	* 同样的，可以对上船地点`embarked`进行数值映射，但上船地点不像性别那样，显而易见只有两种而可能，所以需要先查看其所有取值可能：
 
-		```python
-		print(titanic['embarked'].unique())
-		```
+	```python
+	print(titanic['embarked'].unique())
+	```
 
-		然后进行数值映射：
+	然后进行数值映射：
 
-		```python
-		titanic['embarked'] = titanic['embarked'].fillna('S')  # 由于只有两个缺失值，故使用最多的`S`填充
-		titanic.loc[titanic['embarked'] == 'S', 'embarked'] = 0
-		titanic.loc[titanic['embarked'] == 'C', 'embarked'] = 1
-		titanic.loc[titanic['embarked'] == 'Q', 'embarked'] = 2
-		```
+	```python
+	titanic['embarked'] = titanic['embarked'].fillna('S')  # 由于只有两个缺失值，故使用最多的`S`填充
+	titanic.loc[titanic['embarked'] == 'S', 'embarked'] = 0
+	titanic.loc[titanic['embarked'] == 'C', 'embarked'] = 1
+	titanic.loc[titanic['embarked'] == 'Q', 'embarked'] = 2
+	```
+  
+	* 标准化处理：
+
+	```python
+	predictors = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']
+	titanic[predictors] = pd.DataFrame(StandardScaler().fit_transform(titanic[predictors]))
+	```
 
 * 在下面的操作中，将`survived`作为分类标签，`pclass`、`sex`、`age`、`sibsp`、`parch`、`fare`、`embarked`为分类特征。（其余参数不是与这些特征重复，如`class`、`who`等，就是缺失值太多，如`deck`，故不作为特征）
 
@@ -979,7 +1003,7 @@ alg = LinearRegression()
 kf = KFold(4, random_state=False)  # 切分成4份
 
 for train, test in kf.split(titanic):
-	train_predictors = (titanic[predictors].iloc[train, :])  # 训练数据
+	train_predictors = titanic[predictors].iloc[train, :]  # 训练数据
 	train_target = titanic['survived'].iloc[train]  # 训练集标签
 	alg.fit(train_predictors, train_target)  # 代入线性回归模型
 	test_predictions = alg.predict(titanic[predictors].iloc[test, :])  # 预测测试集
@@ -993,5 +1017,150 @@ accuracy = predictions[predictions == titanic['survived']].shape[0] / len(predic
 print(accuracy)
 ```
 
+> 运行结果：0.7890011223344556，对于二分类任务来说比较低
+
 ### 逻辑回归预测
+
+```python
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import KFold
+
+predictors = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']
+predictions = list()
+
+alg = LogisticRegression(random_state=1, solver='liblinear')
+kf = KFold(4, random_state=False)  # 切分成4份
+
+for train, test in kf.split(titanic):
+	train_predictors = titanic[predictors].iloc[train, :]  # 训练数据
+	train_target = titanic['survived'].iloc[train]  # 训练集标签
+	alg.fit(train_predictors, train_target)  # 代入线性回归模型
+	test_predictions = alg.predict(titanic[predictors].iloc[test, :])  # 预测测试集
+	predictions.append(test_predictions)  # 记录测试结果
+
+predictions = np.concatenate(predictions, axis=0)  # 
+predictions[predictions > 0.5] = 1  # 将预测值映射为0或1的结果
+predictions[predictions <= 0.5] = 0
+
+accuracy = predictions[predictions == titanic['survived']].shape[0] / len(predictions)  # 预测精度
+print(accuracy)
+```
+
+> 运行结果：0.7912457912457912
+
+* 如果只是要评估精度，可以直接用`cross_val_score`代替：
+
+	```python
+	from sklearn.linear_model import LogisticRegression
+	from sklearn. model_selection import cross_val_score
+	
+	predictors = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']
+	alg = LogisticRegression(random_state=1, solver='liblinear')
+	scores = cross_val_score(alg, titanic[predictors], titanic['survived'], cv=5)
+	print(scores.mean())
+	```
+
+### 随机森林预测
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import KFold
+
+predictors = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']
+predictions = []
+
+alg = RandomForestClassifier(random_state=1, n_estimators=50, min_samples_split=4, min_samples_leaf=2)
+# n_estimators表示构造的树的个数，min_samples_split表示最小切分样本数（什么时候停止切割），min_samples_leaf表示最小叶子节点个数
+kf = KFold(4, random_state=False)
+
+for train, test in kf.split(titanic):
+	train_predictors = titanic[predictors].iloc[train, :]  # 训练数据
+	train_target = titanic['survived'].iloc[train]  # 训练集标签
+	alg.fit(train_predictors, train_target)  # 代入线性回归模型
+	test_predictions = alg.predict(titanic[predictors].iloc[test, :])  # 预测测试集
+	predictions.append(test_predictions)
+
+predictions = np.concatenate(predictions, axis=0)
+predictions[predictions > 0.5] = 1
+predictions[predictions <= 0.5] = 0
+
+accuracy = predictions[predictions == titanic['survived']].shape[0] / len(predictions)
+print(accuracy)
+```
+
+> 运行结果：0.8338945005611672
+
+* 特别注意：随机森林在使用时需要对参数（树的个数，最小切分样本数等）进行调优
+
+* 评估特征重要性：
+
+	```python
+	predictors = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']
+	
+	selector = SelectKBest(f_classif, k=5)
+	selector.fit(titanic[predictors], titanic['survived'])
+	
+	scores = -np.log10(selector.pvalues_)
+	
+	plt.bar(range(len(predictors)), scores)
+	plt.xticks(range(len(predictors)), predictors, rotation=60)
+	plt.show()
+	
+	for index, feature in enumerate(predictors):
+		print('%s:\t%d' % (feature, scores[index]))
+	```
+
+	> 运行结果：
+	> | feature  | score |
+	> | -------- | ----- |
+	> | pclass   | 24    |
+	> | sex      | 68    |
+	> | age      | 1     |
+	> | sibsp    | 0     |
+	> | parch    | 1     |
+	> | fare     | 14    |
+	> | embarked | 2     |
+	>
+
+### 集成算法预测
+
+```python
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.model_selection import KFold
+
+predictors = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']
+predictions = []
+
+algs = [
+	[GradientBoostingClassifier(random_state=1, n_estimators=40, max_depth=3), predictors],
+	[LogisticRegression(random_state=1, solver='liblinear'), predictors]
+]  # 包含两种算法
+kf = KFold(4, random_state=False)
+
+for train, test in kf.split(titanic):
+	train_predictors = titanic[predictors].iloc[train, :]  # 训练数据
+	train_target = titanic['survived'].iloc[train]  # 训练集标签
+	full_test_predictions = []  # 两种算法总体的预测
+
+	for alg, predictor in algs:  # 对每种算法进行拟合
+		alg.fit(train_predictors, train_target)  # 代入线性回归模型
+		test_predictions = alg.predict(titanic[predictors].iloc[test, :])  # 预测测试集
+		full_test_predictions.append(test_predictions)
+
+	test_predictions = (full_test_predictions[0] + full_test_predictions[1]) / 2  # 结果取两种算法的平均
+	test_predictions[test_predictions > 0.5] = 1
+	test_predictions[test_predictions <= 0.5] = 0
+	predictions.append(test_predictions)  # 真正的预测结果
+
+predictions = np.concatenate(predictions, axis=0)
+accuracy = predictions[predictions == titanic['survived']].shape[0] / len(predictions)
+print(accuracy)
+```
+
+> 运行结果：0.8114478114478114
+
+***
+
+## 贝叶斯算法
 
