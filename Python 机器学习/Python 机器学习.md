@@ -1172,11 +1172,11 @@ print(accuracy)
 
 * 贝叶斯公式：
 	$$
-	P(A|B) = \frac{P(B|A)P(A)}{P(B)}
+	P(A|B) = \frac{P(B|A) \cdot P(A)}{P(B)}
 	$$
 	用于：对于观测数据$D$的每种猜测$h_i$，有：
 	$$
-	P(h_i|D) = \frac{P(h_i)P(D|h_i)}{P(D)} \propto P(h_i)P(D|h_i)
+	P(h_i|D) = \frac{P(h_i) \cdot P(D|h_i)}{P(D)} \propto P(h_i) \cdot P(D|h_i)
 	$$
 	其中第一项$P(h)$称为先验概率，即这种猜测在以往的数据中发生的概率，而第二项$P(D|h)$表示“猜测生成观测数据的可能性的大小”
 	
@@ -1190,11 +1190,11 @@ print(accuracy)
 
 	对于一个数据$D$由特征$d_1, d_2, ..., d_n$组成的问题：
 	$$
-	P(D|h) = P(d_1, d_2, ..., d_n|h) = P(d_1|h)P(d_2|d_1, h)...P(d_n|d_1, ..., d_{n-1}, h)
+	P(D|h) = P(d_1, d_2, ..., d_n|h) = P(d_1|h) \cdot P(d_2|d_1, h) \cdot ... \cdot P(d_n|d_1, ..., d_{n-1}, h)
 	$$
 	进行假设：特征$d_i$之间互相独立，则简化为：
 	$$
-	P(D|h) = P(d_1|h)P(d_2|h)...P(d_n|h)
+	P(D|h) = P(d_1|h) \cdot P(d_2|h) \cdot ... \cdot P(d_n|h)
 	$$
   
 
@@ -1273,3 +1273,47 @@ print(accuracy)
 	> world
 
 ***
+
+## 文本分析
+
+* 分词：将中文句子切分为单个词汇
+
+	使用 _结巴分词_ 模块：
+
+	```python
+	import jieba
+	```
+
+* 停用词：在语料中大量出现，对于主题分析没有任何实际意义的词汇（如：标点符号，“你”、“一般”等）。故在进行文本分析时应最先删除停用词
+
+* 关键词提取：`TF-IDF`
+
+	* `TF`：词频统计
+		$$
+		TF = \frac{某个词在文章中出现的次数}{文章中总词数}
+		$$
+
+	* `IDF`：逆文档频率
+		$$
+		IDF = \log \frac{语料库的文档总数}{包含该词的文档数+1}
+		$$
+		如果某个词很少见，但在文章中多次出现，那它就很可能反映了这篇文章的特征
+
+	* `TF-IDF`评估方法：
+		$$
+		TF\_IDF = TF \times IDF
+		$$
+		值越高，越有可能是我们所需要的特征词汇
+
+* 相似度：将两个句子转化为词频向量，再根据这两个向量进行相似度分析（余弦相似度）
+	$$
+	\begin{align}
+	\cos \theta &= \frac{\sum_{i=1}^n A_i \times B_i}{\sqrt{\sum_{i=1}^n (A_i)^2} \times \sqrt{\sum_{i=1}^n (B_i)^2}} \\
+	&= \frac{A \cdot B}{|A| \times |B|}
+	\end{align}
+	$$
+	
+***
+
+## 支持向量机
+
