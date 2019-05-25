@@ -1028,7 +1028,7 @@ from sklearn.model_selection import KFold
 predictors = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']
 predictions = list()
 
-alg = LogisticRegression(random_state=1, solver='liblinear')
+alg = LogisticRegression(random_state=1, solver='lbfgs', penalty='l2')
 kf = KFold(4, random_state=False)  # 切分成4份
 
 for train, test in kf.split(titanic):
@@ -1046,7 +1046,7 @@ accuracy = predictions[predictions == titanic['survived']].shape[0] / len(predic
 print(accuracy)
 ```
 
-> 运行结果：0.7912457912457912
+> 运行结果：0.7934904601571269
 
 * 如果只是要评估精度，可以直接用`cross_val_score`代替：
 
@@ -1055,7 +1055,7 @@ print(accuracy)
 	from sklearn. model_selection import cross_val_score
 	
 	predictors = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']
-	alg = LogisticRegression(random_state=1, solver='liblinear')
+	alg = LogisticRegression(random_state=1, solver='lbfgs', penalty='l2')
 	scores = cross_val_score(alg, titanic[predictors], titanic['survived'], cv=5)
 	print(scores.mean())
 	```
@@ -1069,7 +1069,7 @@ from sklearn.model_selection import KFold
 predictors = ['pclass', 'sex', 'age', 'sibsp', 'parch', 'fare', 'embarked']
 predictions = []
 
-alg = RandomForestClassifier(random_state=1, n_estimators=50, min_samples_split=4, min_samples_leaf=2)
+alg = RandomForestClassifier(random_state=1, criterion='gini', n_estimators=50, min_samples_split=4, min_samples_leaf=2)
 # n_estimators表示构造的树的个数，min_samples_split表示最小切分样本数（什么时候停止切割），min_samples_leaf表示最小叶子节点个数
 kf = KFold(4, random_state=False)
 
@@ -1134,7 +1134,7 @@ predictions = []
 
 algs = [
 	[GradientBoostingClassifier(random_state=1, n_estimators=40, max_depth=3), predictors],
-	[LogisticRegression(random_state=1, solver='liblinear'), predictors]
+	[LogisticRegression(random_state=1, solver='lbfgs'), predictors]
 ]  # 包含两种算法
 kf = KFold(4, random_state=False)
 
@@ -1164,3 +1164,112 @@ print(accuracy)
 
 ## 贝叶斯算法
 
+### 理论内容
+
+* 贝叶斯要解决的问题：
+	* 正向概率：知道可能事件的分布（如袋子中每种颜色小球的数量），求每个事件发生的概率（摸到某种颜色小球的概率）
+	* 逆向概率：事先不知道事件分布的比例（现实中大部分事件都是这样的，我们只能观测到事物表面），而是通过对每个事件发生概率的观测（试验），反推出事件是如何分布的
+
+* 贝叶斯公式：
+	$$
+	P(A|B) = \frac{P(B|A)P(A)}{P(B)}
+	$$
+	用于：对于观测数据$D$的每种猜测$h_i$，有：
+	$$
+	P(h_i|D) = \frac{P(h_i)P(D|h_i)}{P(D)} \propto P(h_i)P(D|h_i)
+	$$
+	其中第一项$P(h)$称为先验概率，即这种猜测在以往的数据中发生的概率，而第二项$P(D|h)$表示“猜测生成观测数据的可能性的大小”
+	
+* 模型比较理论
+	
+	* 最大似然：最符合观测数据的（即$P(D|h)$最大的）最有优势
+	* 奥卡姆剃刀：最常见的（即$P(h)$最大的）最有优势
+		例：进行数据拟合时，越是高阶的多项式越不常见
+	
+* 朴素贝叶斯问题：
+
+	对于一个数据$D$由特征$d_1, d_2, ..., d_n$组成的问题：
+	$$
+	P(D|h) = P(d_1, d_2, ..., d_n|h) = P(d_1|h)P(d_2|d_1, h)...P(d_n|d_1, ..., d_{n-1}, h)
+	$$
+	进行假设：特征$d_i$之间互相独立，则简化为：
+	$$
+	P(D|h) = P(d_1|h)P(d_2|h)...P(d_n|h)
+	$$
+  
+
+### 案例：拼写纠正
+
+* $P(h)$在本例中表示猜测词在全文本中出现的词频，而$P(D|h)$可以用编辑距离或是两个字母在键盘上的距离来衡量。枚举所有可能的$h$并选取概率最大的
+
+* 训练模型：根据[语料库](<https://corpus.byu.edu/nowtext-samples/text.zip>)中每个词的词频进行评测（$P(h)$）
+
+	```python
+	from re import findall
+	from collections import defaultdict
+	
+	def words(text):  # 只保留单词
+		return findall('[a-z]+', text.lower())
+	
+	def train(features):
+		model = defaultdict(lambda: 1)  # 确保每个词（不限于语料库中的）至少出现一次，以防专有词汇等
+		for feature in features:
+			model[feature] += 1
+		return model
+	
+	WORDS = train(words(open('text.txt').read()))  # 用语料库进行训练
+	```
+
+* 编辑距离：$P(D|h)$
+
+	```python
+	from string import ascii_lowercase  # 小写字母表
+	
+	def edit_d(word: str, d: int = 1) -> set:
+		"""
+		find all the words whose edit distance to `word` is `d`
+		:param word: typo word
+		:param d: edit distance
+		:return: a set of filtered words
+		"""
+		n = len(word)
+		if d == 1:  # 返回编辑距离为1的所有字母组合
+			return set(
+				[word[0:i] + word[i+1:] for i in range(n)] +   # 删除
+				[word[0:i] + word[i+1] + word[i] + word[i+2:] for i in range(n-1)] +   # 易位
+				[word[0:i] + c + word[i+1:] for i in range(n) for c in ascii_lowercase] +   # 替换
+				[word[0:i] + c + word[i:] for i in range(n+1) for c in ascii_lowercase]  # 插入
+			)
+		if d == 2:  # 返回编辑距离为2的所有字母组合
+			return set(e2 for e1 in edit_d(word, d=1) for e2 in edit_d(e1, d=1))
+		else:
+		raise Exception('The edit distance `d` can only be 1 or 2.')
+	```
+
+* 最终
+
+	```python
+	def known(words_: [list, set]) -> set:  # 判断是否在语料库内
+		"""
+		return the correct words in `words_`
+		:param words_: a set of words
+		:return: correct words
+		"""
+		return set(w for w in words_ if w in WORDS)
+	
+	def correct(word):
+		word = word.lower()
+		candidates = known([word]) or known(edit_d(word, d=1)) or known(edit_d(word, d=2)) or [word]  # 依次为原词（已知）、编辑距离1的词、编辑距离2的词、原词（未知）
+		return max(candidates, key=lambda w: WORDS[w])
+	```
+
+* 测试运行：
+
+	```python
+	print(correct('worls'))
+	```
+	运行结果：
+	
+	> world
+
+***
