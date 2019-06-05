@@ -1317,3 +1317,211 @@ print(accuracy)
 
 ## 支持向量机
 
+* 二分类算法，正例的标签为$+1$，负例的标签为$-1$
+
+### 理论内容
+
+* 决策边界：一个超平面，应该让`Margin`越大越好（离边界点越远越好）
+
+* 距离的计算：数据点$x$到决策边界$w^Tx + b = 0$的距离（$w$为平面法向量，$b$为偏置）
+
+	* 考虑平面上两点$x',x''$，有：
+		$$
+		w^Tx' = x^Tx'' = -b
+		$$
+		即：
+		$$
+		\begin{pmatrix}
+		w^T & x''-x'
+		\end{pmatrix}
+		 = 0
+		$$
+	
+	* 易于求出$x$与$x'$的距离，再投影到平面法向上即可：
+		$$
+		distance(x, b, w) = |\frac{w^T}{\|w\|}(x-x')| = \frac{1}{\|w\|}|w^Tx+b|
+		$$
+
+* 对于数据$(x, y)$：
+
+	* 决策方程：
+		$$
+		y(x) = w^T\Phi(x) + b \\
+		d = \frac{y_i(w^T\cdot \Phi(x_i)+b)}{\|w\|}
+		$$
+
+	* 判断方法：
+		$$
+		y_i\cdot y(x_i)>0
+		$$
+		求出$y(x_i)$后，即可知道$y_i$正负，从而判定为正例或负例
+
+* 优化目标：找到一组$(w, b)$使得 离该边界最近的点 最远
+
+### 数学推导
+* 首先可以通过放缩使得$y_i(w^T\cdot \Phi(x_i)+b) \ge 1$（约束条件）
+
+* 优化：
+	$$
+	\arg \max_{w, b} \frac{\min_i y_i(w^T\cdot \Phi(x_i)+b)}{\|w\|}
+	$$
+	结合上述放缩变换，认为$\min_i y_i(w^T\cdot \Phi(x_i)+b) = 1$，则只需考虑：
+	$$
+	\arg \max_{w, b} \frac{1}{\|w\|}
+	$$
+	转化为：
+	$$
+	\arg \min_{w, b} \frac{w^2}{2}
+	$$
+	由于存在$y_i(w^T\cdot \Phi(x_i)+b) \ge 1$的约束，使用拉格朗日数乘法：
+	$$
+	L(w, b, \lambda) = \frac{w^2}{2} - \sum_{i=1}^n \lambda_i(y_i(w^T\cdot \Phi(x_i)+b)-1)
+	$$
+	上式中$\lambda_i$即表征着每个数据点的权重。
+	我们要求：
+	$$
+	\arg\min_{w, b}\max_\lambda L(w, b, \lambda)
+	$$
+	根据对偶性质，转化为
+	$$
+	\arg \max_\lambda \min_{w, b} L(w, b, \lambda)
+	$$
+	求偏导：
+	$$
+	\begin{align}
+	\frac{\part L}{\part w} = 0 & \Rightarrow w = \sum_{i=1}^n \lambda_iy_i\Phi(x_i) \\
+	\frac{\part L}{\part b} = 0 & \Rightarrow 0 = \sum_{i=1}^n \lambda_iy_i
+	\end{align}
+	$$
+	代回原式：
+	$$
+	\begin{align}
+	L(w, b, \lambda) &= \frac{w^2}{2} - \sum_{i=1}^n \lambda_i(y_i(w^T\cdot \Phi(x_i)+b)-1) \\
+	&= \frac{1}{2}w^Tw - w^T\sum_{i=1}^n\lambda_iy_i\Phi(x_i) - b\sum_{i=1}^n\lambda_iy_i + \sum_{i=1}^n \lambda_i \\
+	&=  \sum_{i=1}^n\lambda_i - \frac{1}{2}(\sum_{i=1}^n \lambda_iy_i\Phi(x_i))^T\sum_{i=1}^n\lambda_iy_i\Phi(x_i)\\
+	&= \sum_{i=1}^n\lambda_i - \frac{1}{2}\sum_{i=1, j=1}^n\lambda_i\lambda_jy_iy_j\Phi^T(x_i)\Phi(x_j) \\
+	&= \min_{w, b} L(w, b, \lambda)
+	\end{align}
+	$$
+	下面再求
+	$$
+	\arg \max_\lambda \min_{w, b} L(w, b, \lambda) = \arg \max_\lambda ( \sum_{i=1}^n\lambda_i - \frac{1}{2}\sum_{i=1, j=1}^n\lambda_i\lambda_jy_iy_j\Phi(x_i)\Phi(x_j))
+	$$
+	转换为求极小值：
+	$$
+	\arg \min_\lambda (\frac{1}{2}\sum_{i=1, j=1}^n\lambda_i\lambda_jy_iy_j\Phi(x_i)\Phi(x_j) - \sum_{i=1}^n\lambda_i)
+	$$
+	仍有约束：
+	$$
+	\begin{align}
+	\sum_{i=1}^n \lambda_iy_i &= 0 \\
+	\lambda_i &\ge 0
+	\end{align}
+	$$
+	代入第一个约束可以消去一个元，然后就可以对目标式子求偏导，得到$n-1$元方程组，联立求解即可。
+	但如果所得的解中有任何一个$\lambda$不符合第二个约束，就说明真正的解应该在边界上。事实上，大部分的数据点都是$\lambda=0$
+	当最终找到满足约束的一组$\lambda$后，带入求解：
+	$$
+	w = \sum_{i=1}^n \lambda_iy_i\Phi(x_i)
+	$$
+	同时也会得到：
+	$$
+	b = y_j - \sum_{i=1}^n \lambda_iy_i(x_i \cdot x_j)
+	$$
+	其中$j$为任意一个指标
+	至此，最优的$(w, b)$已经解出，即得到了最优平面。
+
+* 支持向量机名称由来：$\lambda \not= 0$的点才被称为支持向量，而只有支持向量才会对结果产生影响
+
+### 软间隔问题
+
+* 要解决的问题：数据中的噪音点对决策边界的不良影响
+
+* 手段：把原先的要求（把正例和负例完全分开）放宽一点
+	引入松弛因子$\xi$，条件转变为：
+	$$
+	y_i(w \cdot x_i + b) \ge 1 - \xi_i
+	$$
+	
+* 新的目标函数为：
+	$$
+	\min \frac{1}{2}\|w\|^2 + C \sum_{i=1}^n \xi_i
+	$$
+	当$C$很大时，意味着分类比较严格，而$C$较小时，意味着可以容忍更大的错误。
+
+* 重新求解问题：
+	$$
+	L(w, b, \xi, \lambda, \mu) = \frac{1}{2}\|w\|^2 + C \sum_{i=1}^n \xi_i - \sum_{i=1}^n \lambda_i(y_i(w \cdot x_i + b)-1+\xi_i) - \sum_{i=1}^n \mu_i\xi_i
+	$$
+	其中$\mu$是由新加入的参数$\xi$带来的约束。
+
+	总的约束为：
+	$$
+	\begin{align}
+	w &= \sum_{i=1}^n \lambda_iy_i\Phi(x_n) \\
+	0 &= \sum_{i=1}^n \lambda_iy_i \\
+	0 &= C - \lambda_i - \mu_i \\
+	\lambda_i &\ge 0 \\
+	\mu_i &\ge 0
+	\end{align}
+	$$
+	同样的解法，可得：
+	$$
+	\arg \min_\lambda \frac{1}{2}\sum_{i=1}^n \sum_{j=1}^n \lambda_i\lambda_jy_iy_j(x_i \cdot x_j) - \sum_{i=1}^n\lambda_i \\
+	\sum_{i=1}^n\lambda_iy_i = 0 \\
+	0 \le \lambda_i \le C
+	$$
+
+* 通过选择$C$值，重新找到解即可
+
+### 核变换
+
+* 要解决的问题：低维空间不可分（无法线性划分）
+
+* 解决方案：找到一种变换的方法，把原始数据映射到高维空间中（使用一个超平面就可以把数据点分开）（非线性支持向量机）
+
+* _例_：原始数据集分布在二维空间中，如果理想的决策边界是一个椭圆，是线性不可分的。那我们就需要通过映射$\Phi$构造出一个高维空间，使得在这个高维空间中，决策边界（原来的椭圆）变成了一个超平面。具体的方法就是：
+	$$
+	(X_1, X_2) \rightarrow (X_1, X_2, X_1^2, X_2^2, X_1X_2)
+	$$
+	在新的五维空间中椭圆就会写作一个超平面$\sum_{i=1}^5 a_iX_i + a_6 = 0$，于是转化为一个线性支持向量机问题
+
+* 由于要进行的映射在高维时计算量会指数上升，就要引入核函数加以简化，即直接在原先的低维空间中加以计算（数学上可以证明，这与显式地写出高维空间得到的结果是一致的）
+
+	核函数——计算两个向量在隐式映射过后的空间中的内积的函数
+
+* 几种核函数：
+
+	* 线性核函数：
+		$$
+		K(x_i, x_j) = x_i \cdot x_j = x_i^Tx_j
+		$$
+
+	* 多项式核函数：
+		$$
+		X(x_i, x_j) = (x_i^Tx_j + 1)^d
+		$$
+		其中$d$为多项式阶数
+
+	* 高斯核函数：
+		$$
+		K(x_i, x_j) = \exp(-\frac{\|x_i-x_j\|^2}{2\sigma^2})
+		$$
+		其中$\sigma^2$为方差
+
+	* `Sigmoid`核函数：
+		$$
+		K(x_i, x_j) = \tanh(a(x_i^Tx_j) + b)
+		$$
+		其中$a, b$为给定常数
+
+* 非线性支持向量机对应的目标函数：
+	$$
+	\arg \min_\lambda \sum_{i=1, j=1}^n \lambda_i\lambda_jy_iy_jK(x_i, x_j) - \sum_{i=1}^n\lambda_i
+	$$
+	相应的，决策方程为：
+	$$
+	f(x) = w^Tx+b = \sum_{i=1}^n\lambda_iy_iK(x, x_i) + b
+	$$
+	
+### 实际操作与调参
