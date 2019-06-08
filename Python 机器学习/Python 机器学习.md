@@ -866,7 +866,7 @@ import seaborn as sns
 * 自动选取参数：
 
 	```python
-	from sklearn.grid_search import GridSearchCV
+	from sklearn.grid_search import GridSearchCV  # 选择最佳参数
 	from sklearn.ensemble import RandomForestRegressor  # 随机森林
 	from sklearn.model_selection import train_test_split  # 交叉验证
 	
@@ -1525,3 +1525,105 @@ print(accuracy)
 	$$
 	
 ### 实际操作与调参
+
+* 基本操作
+
+	构造数据集并训练模型：
+
+	```python
+	from sklearn.datasets.samples_generator import make_blobs
+	from sklearn.svm import SVC  # 支持向量机分类器
+	
+	test_X, test_y = make_blobs(n_samples=50, centers=2, random_state=0, cluster_std=.6)
+	
+	svc_model = SVC(kernel='linear')  # 线性核函数
+	svc_model.fit(test_X, test_y)
+	```
+
+	效果通过绘图展示：
+
+	```python
+	import matplotlib.pyplot as plt
+	
+	
+	def plot_svc(model, ax=None, plot_support=True):
+		if ax is None:
+		ax = plt.gca()
+		xlim = ax.get_xlim()
+		ylim = ax.get_ylim()
+	
+		x = np.linspace(xlim[0], xlim[1], 30)
+		y = np.linspace(ylim[0], ylim[1], 30)
+		Y, X = np.meshgrid(y, x)
+		xy = np.vstack([X.ravel(), Y.ravel()]).T
+		P = model.decision_function(xy).reshape(X.shape)
+	
+		ax.contour(X, Y, P, colors='k', levels=(-1, 0, 1), alpha=.5, linestyles=('--', '-', '--'))  # 绘制出决策边界
+	
+		if plot_support:  # 标记出支持向量
+			ax.scatter(model.support_vectors_[:, 0], model.support_vectors_[:, 1], s=250, linewidth=1, facecolors='none', edgecolors='black')
+	
+		ax.set_xlim(xlim)
+		ax.set_ylim(ylim)
+		return None
+	
+	
+	plt.scatter(test_X[:, 0], test_X[:, 1], c=test_y, s=50, cmap='autumn')
+	plot_svc(svc_model, plot_support=True)
+	plt.show()
+	```
+
+* 引入核函数：
+
+	```python
+	from sklearn.datasets.samples_generator import make_circles
+	from sklearn.svm import SVC  # 支持向量机分类器
+	
+	test_X, test_y = make_circles(n_samples=100, factor=.1, noise=.1)
+	
+	svc_model = SVC(kernel='rbf', C=1e6, gamma='auto')  # `rbf`：径向核函数
+	svc_model.fit(test_X, test_y)
+	
+plt.scatter(test_X[:, 0], test_X[:, 1], c=test_y, s=50, cmap='autumn')
+	plot_svc(svc_model, plot_support=True)
+	plt.show()
+	```
+
+* 软间隔问题
+
+	当数据集之间的分界不那么明显，就需要调整`C`的大小，越小容忍程度越大。可以通过交叉验证（`GridSearchCV`）来确定最佳的`C`值
+
+	```python
+	from sklearn.datasets.samples_generator import make_blobs
+	from sklearn.svm import SVC  # 支持向量机分类器
+	
+	test_X, test_y = make_blobs(n_samples=50, centers=2, random_state=0, cluster_std=.8)  # 和之前的数据比，聚集程度更低
+	
+	svc_model = SVC(kernel='linear', C=1)  # 设置C值
+	svc_model.fit(test_X, test_y)
+	
+	plt.scatter(test_X[:, 0], test_X[:, 1], c=test_y, s=50, cmap='autumn')
+	plot_svc(svc_model, plot_support=True)
+	plt.show()
+	```
+
+* 模型复杂程度
+
+	在高斯核函数（径向核函数）中，通过调节$\gamma$值可以控制模型的复杂程度，$\gamma$越大，模型越复杂。也可以设置成`auto`来自动选择。可以通过交叉验证（`GridSearchCV`）来确认最好的$\gamma$值，以预防过拟合
+
+	```python
+	from sklearn.datasets.samples_generator import make_blobs
+	from sklearn.svm import SVC  # 支持向量机分类器
+	
+	test_X, test_y = make_circles(n_samples=100, factor=.1, noise=.1)
+	
+	svc_model = SVC(kernel='rbf', C=1, gamma=1)  # 设置gamma值
+	svc_model.fit(test_X, test_y)
+	
+	plt.scatter(test_X[:, 0], test_X[:, 1], c=test_y, s=50, cmap='autumn')
+	plot_svc(svc_model, plot_support=True)
+	plt.show()
+	```
+
+	
+
