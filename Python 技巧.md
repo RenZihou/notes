@@ -138,6 +138,13 @@
 
 * 使用`set`而非`list`进行查找
 
+	`set`是一个无序的无重复的集合，可以自动将列表中的重复元素去除。若要排序，如下：
+
+	```python
+	li = [1, 2, 2, 8, 5, 8]
+	li2 = list(sorted(set(li)))  # li2 = [1, 2, 5, 8]
+	```
+
 * 使用`NumPy`中的函数代替`math`中的函数
 
 	* 使用`np.array`代替`list`（向量化）
@@ -175,3 +182,20 @@
 	`map()`将第二个参数（序列）中的每一项代入第一个参数（函数，即一个映射），所有返回值构成新的结果
 
 	`filter()`将第二个参数（序列）中的每一项代入第一个参数（函数）中，返回值为`True`则将其添加到结果中
+
+## 数据处理
+
+* 数据预览
+
+	使用`pandas-profiling`模块中的`ProfileReport()`方法，生成一份完整的数据报告，包含特征信息、数据缺陷警告、简单分析、关联、样例等
+
+	```python
+	import seaborn as sns
+	import pandas_profiling
+	
+	titanic = sns.load_dataset('titanic')  # 使用经典的泰坦尼克获救数据集
+	profile = pandas_profiling.ProfileReport(titanic)  # 分析
+	profile.to_file(output_file='output_file.html')  # 保存到html文档中
+	```
+
+	

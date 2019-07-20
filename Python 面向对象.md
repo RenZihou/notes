@@ -265,7 +265,7 @@ class MyClass(object):
 		def __next__(self):  # 针对迭代器获取下一个值
 			self.count += 1
 			if self.count >= maxn:  # 判定循环上限
-				raise StopIteration()  # 抛出异常终止遍历
+				raise StopIteration  # 抛出异常终止遍历
 			return self.count
 	
 	MyObject = MyClass()
