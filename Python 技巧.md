@@ -89,6 +89,16 @@
 	print(li[::-1])  # [3, 2, 1]
 	```
 
+* 用`or`实现多重选择：
+
+	`or`的原理：从第一个开始判断，出现的第一个`True`值会被返回（后面的被短路）
+
+	故：当我们要依次调用`func1()`、`func2()`、`func3()`，要求是只有当前一个返回`None`时才调用下一个，则可以如下写：
+
+	```python
+	result = func1() or func2() or func3()
+	```
+
 ***
 
 ## 提升效率
@@ -182,6 +192,59 @@
 	`map()`将第二个参数（序列）中的每一项代入第一个参数（函数，即一个映射），所有返回值构成新的结果
 
 	`filter()`将第二个参数（序列）中的每一项代入第一个参数（函数）中，返回值为`True`则将其添加到结果中
+
+* 计数：`collections.Counter`
+
+	```python
+	from collections import Counter
+	
+	li = [1, 2, 2, 2.0, 3, 4, 4]
+	count = Counter(li)  # Counter({2: 3, 4: 2, 1: 1, 3: 1})
+	```
+
+	`Counter`不区分数学上相等的整型和浮点型。
+
+	常用的方法：
+
+	```python
+	print(count.get(2))  # 获取2出现的次数，输出：3
+	print(counter.most_common(2))  # 最常见的2个，输出：[(2, 3), (4, 2)]
+	```
+
+***
+
+## Itertools
+
+```python
+import itertools
+```
+
+* 一维化列表/元组
+
+	```python
+	a = [[1, 2], [3, 4], [5, 6]]
+	b = list(itertools.chain.from_iterable(a))  # b = [1, 2, 3, 4, 5, 6]
+	```
+
+* 创建笛卡尔积
+
+	```python
+	a = list(itertools.product([1, 2, 3], [4, 5]))  # a = [(1, 4), (1, 5), (2, 4), (2, 5), (3, 4), (3, 5)]
+	```
+
+* 创建排列$A_m^n$
+
+	```python
+	a = list(itertools.permutations([1, 2, 3, 4], 3))  # 对[1, 2, 3, 4]中的元素进行4A3排列
+	```
+
+* 创建组合$C_m^n$
+
+	```python
+	a = list(itertools.combinations([1, 2, 3, 4], 3))  # # 对[1, 2, 3, 4]中的元素进行4C3组合
+	```
+
+***
 
 ## 数据处理
 
