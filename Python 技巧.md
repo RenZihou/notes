@@ -213,7 +213,25 @@
 
 ***
 
-## Itertools
+## 数据处理
+
+* 数据预览
+
+	使用`pandas-profiling`模块中的`ProfileReport()`方法，生成一份完整的数据报告，包含特征信息、数据缺陷警告、简单分析、关联、样例等
+
+	```python
+	import seaborn as sns
+	import pandas_profiling
+	
+	titanic = sns.load_dataset('titanic')  # 使用经典的泰坦尼克获救数据集
+	profile = pandas_profiling.ProfileReport(titanic)  # 分析
+	profile.to_file(output_file='output_file.html')  # 保存到html文档中
+	```
+***
+
+## 一些库
+
+### Itertools
 
 ```python
 import itertools
@@ -244,21 +262,51 @@ import itertools
 	a = list(itertools.combinations([1, 2, 3, 4], 3))  # # 对[1, 2, 3, 4]中的元素进行4C3组合
 	```
 
-***
+### Typing
 
-## 数据处理
+```python
+from typing import *
+```
 
-* 数据预览
+* 声明容器对象内部元素类型：
 
-	使用`pandas-profiling`模块中的`ProfileReport()`方法，生成一份完整的数据报告，包含特征信息、数据缺陷警告、简单分析、关联、样例等
+  ```python
+  names: List[str] = ['Tom', 'Jack']
+  classes: Tuple[int] = (2, 5)
+  scores: Dict[str, int] = {'Tom': 99, 'Jack': 85}
+  ```
+
+* 推荐用法
 
 	```python
-	import seaborn as sns
-	import pandas_profiling
+	# Dict注释返回类型，Mapping注释参数
+	def size(rect: Mapping[str, int]) -> Dict[str, int]:
+	    return {'area': rect['width']*rect['height'], 'perimeter': 2*(rect['width']+rect['height'])}
 	
-	titanic = sns.load_dataset('titanic')  # 使用经典的泰坦尼克获救数据集
-	profile = pandas_profiling.ProfileReport(titanic)  # 分析
-	profile.to_file(output_file='output_file.html')  # 保存到html文档中
+	# Set注释返回类型，AbstractSet注释参数
+	def describe(s: AbstractSet[int]) -> Set[int]:
+	    return set(s)
 	```
 
+* 定义特殊含义的类型：
+
+	```python
+	Person = NewType('Person', Tuple[str, int, float])
+	person = Person(('Mike', 22, 1.75))
+	```
+
+* `Union`：`Union[int, float]`表示整型和浮点型均可，常用于声明参数
+
+* `Optional`：`Optional[str] == Union[str, None]`，常用于声明参数（传递`None`并不代表不传参数）
+
+### Tqdm
+
+* 在顶层`for`循环上加一个`tqmd()`函数以实现进程监控
+
+	```python
+	from time import sleep
+	from tqdm import tqdm
 	
+	for each in tqdm(range(1000)):
+	    sleep(.5)
+	```
