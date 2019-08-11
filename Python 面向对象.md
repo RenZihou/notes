@@ -327,20 +327,22 @@ class MyClass(object):
 
 * 法三
 
-	```python
-	class A(Object):
-		def __get__(self, instance, owner):
-			return instance.__a  # `self`为共用的类，`instance`才是不同实例
-	
-		def __set__(self, instance, value):
-			instance.__a = value
-	
-		def __delete__(self, instance):
-			del instance.__a
-	
-	class MyClass(Object):
-		a = A()
-	```
+  使用内置的`__get__`，`__set__`，`__delete__`函数
+
+  ```python
+  class A(Object):
+  	def __get__(self, instance, owner):  # owner是所有者的类，instance是访问该描述器的实例（通过类访问则为None）
+  		return instance.__a  # `self`为共用的类，`instance`才是不同实例
+  
+  	def __set__(self, instance, value):
+  		instance.__a = value
+  
+  	def __delete__(self, instance):
+  		del instance.__a
+  
+  class MyClass(Object):
+  	a = A()
+  ```
 
 * 一个实例属性的正常访问顺序（以`get`为例）：
 
@@ -372,6 +374,7 @@ class MyClass(object):
 	def myfunc():  # 定义需要包装的方法
 	    # 此处为原函数体
 	    pass
+	```
 ```
 	
 * 如果要在类装饰器上传入参数，那么`__init__`就不再接收被装饰函数，而是接受传入的参数，而`__call__`接收被装饰函数同时实现装饰逻辑
