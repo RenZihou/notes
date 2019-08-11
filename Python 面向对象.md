@@ -305,23 +305,25 @@ class MyClass(object):
 
 * 法二
 
-	```python
-	class MyClass(Object):
-		def __init__(self):
-			self.__a = 1
-	
-		@property
-		def a(self):
-			return self.__a
-	
-		@a.setter  # 属性名.setter
-		def a(self, value):
-			self.__a = value
-	
-		@a.deleter  # 属性名.deleter
-		def a(self):
-			del self.__a
-	```
+  利用`@property`，该装饰器将被修饰的函数定义成实例的一个属性，属性的值即为函数返回值
+
+  ```python
+  class MyClass(Object):
+  	def __init__(self):
+  		self.__a = 1
+  
+  	@property
+  	def a(self):  # 查询时调用
+  		return self.__a
+  
+  	@a.setter  # 属性名.setter
+  	def a(self, value):  # 赋值时调用
+  		self.__a = value
+  
+  	@a.deleter  # 属性名.deleter
+  	def a(self):  # 删除时调用
+  		del self.__a
+  ```
 
 * 法三
 
@@ -355,22 +357,40 @@ class MyClass(object):
 
 ## 装饰器的类实现
 
-```python
-class decorator(func):  # 定义装饰器
-	def __init__(self, func, *args, **kwargs):
-		self.f = func #保存传递过来的函数
+* 装饰器要求是一个可调用（`Callable`）的对象，故只需要实现`__call__`（实现装饰逻辑）即可，此外，`__init__`用于接收被装饰的函数
 
-	def __call__(self, *args, **kwargs):
-		# 此处为装饰体
-		self.f()
+	```python
+	class decorator(func):  # 定义装饰器
+	    def __init__(self, func):
+	        self.func = func  # 保存传递过来的函数
 
-def myfunc():  # 定义需要包装的方法
-	# 此处为原函数体
-	pass
+	    def __call__(self, *args, **kwargs):
+	        # 此处为装饰体
+	        return self.func(*args, **kwargs)
 
-newfunc = decorator(myfunc)  # 装饰器包装
+	@decorator
+	def myfunc():  # 定义需要包装的方法
+	    # 此处为原函数体
+	    pass
+```
+	
+* 如果要在类装饰器上传入参数，那么`__init__`就不再接收被装饰函数，而是接受传入的参数，而`__call__`接收被装饰函数同时实现装饰逻辑
 
-newfunc()  # 实际调用
+	```python
+	class decorator(object):
+	    def __init__(self, key=None):
+	        self.key = key
+
+	    def __call__(self, func):
+	        def wrapper(*args, **kwargs):
+	            # 装饰体
+	            func(*args, **kwargs)
+	        return wrapper
+
+	@decorator
+	def myfunc():  # 定义需要包装的方法
+	    # 此处为原函数体
+	    pass
 ```
 
 ***
