@@ -375,7 +375,6 @@ class MyClass(object):
 	    # 此处为原函数体
 	    pass
 	```
-```
 	
 * 如果要在类装饰器上传入参数，那么`__init__`就不再接收被装饰函数，而是接受传入的参数，而`__call__`接收被装饰函数同时实现装饰逻辑
 
@@ -390,11 +389,11 @@ class MyClass(object):
 	            func(*args, **kwargs)
 	        return wrapper
 
-	@decorator
+	@decorator(key=key)
 	def myfunc():  # 定义需要包装的方法
 	    # 此处为原函数体
 	    pass
-```
+	```
 
 ***
 
